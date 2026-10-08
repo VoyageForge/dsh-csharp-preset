@@ -1,5 +1,5 @@
 {
-  "name": "@local/dsh-vue3-js-preset",
+  "name": "@voyageforge/dsh-vue3-js-preset",
   "version": "1.0.0",
   "private": true,
   "type": "module",
