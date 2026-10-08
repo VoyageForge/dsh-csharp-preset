@@ -1,0 +1,8 @@
+{
+  "name": "@local/dsh-csharp-unity-preset",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "files": ["cordis.patch.yml", "skills"],
+  "dsh": { "bundle": { "patch": "./cordis.patch.yml" } }
+}

@@ -1,0 +1,5 @@
+# 预设包的本地安装产物
+node_modules/
+pnpm-lock.yaml
+*.log
+.DS_Store
