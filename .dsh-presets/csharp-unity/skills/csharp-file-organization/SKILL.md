@@ -63,57 +63,58 @@ Keep a consistent order inside every script (Unity Style Guide):
 
 ## Editor vs runtime code
 
-- **Runtime** scripts live in `Assets/Scripts/Runtime/...` and ship in builds.
-- **Editor-only** scripts (custom inspectors, menu items, `[CustomEditor]`) live in
-  `Assets/Scripts/Editor/...` and must sit in an `Editor` assembly definition so they are excluded
+- **Runtime** scripts live under `Assets/Scripts/...` (grouped by feature/domain) and ship in builds.
+- **Editor-only** scripts (custom inspectors, menu items, `[CustomEditor]`) live under
+  `Assets/Editor/Scripts/...` and must sit in an `Editor` assembly definition so they are excluded
   from builds.
-- Separate them with `.asmdef` files: one for runtime, one for `Tests/Editor`, one for
-  `Tests/Runtime`.
+- Separate them with `.asmdef` files: one for runtime, one for `Assets/Tests/Editor`, one for
+  `Assets/Tests/Runtime`.
 
 ## Folder layout
 
-Two layouts are both defensible; pick by project size and stay consistent. Unity's manual fixes only
-the special folder names (`Editor`, `Resources`, `StreamingAssets`, `Plugins`) and their compile
-order — it prescribes nothing about how to group your own scripts
+Unity's manual fixes only the special folder names (`Editor`, `Resources`, `StreamingAssets`,
+`Plugins`) and their compile order; it prescribes nothing about grouping your own files
 ([Special folders and script compilation order](https://docs.unity3d.com/6000.0/Documentation/Manual/ScriptCompileOrderFolders.html)).
-
-**By feature/domain — preferred once a project has real gameplay systems**, because one feature's
-code stays together and the tree keeps growing sideways instead of into ever-deeper type buckets:
-
-```
-Assets/Scripts/
-  Runtime/
-    Core/        # GameManager, ServiceLocator
-    Gameplay/    # player, enemies, mechanics
-    UI/          # UI controllers
-    Data/        # ScriptableObjects, data types
-  Editor/
-    Tools/       # custom editor tools, inspectors
-```
-
-**By type — fine for small projects and prototypes**, and the more common convention in Chinese-language
-Unity projects, which usually also wrap first-party content in an `_Project/` folder so the leading
-underscore sorts it above imported Asset Store and plugin assets:
+This is the layout to follow — assets flat by type at the `Assets/` root, scripts grouped by
+feature/domain under `Scripts/`, and editor-only code under `Editor/Scripts/`:
 
 ```
 Assets/
-  _Project/              # first-party content; underscore keeps it on top
-    Scenes/
-    Scripts/
-      Core/              # lifecycle, events
-      Managers/          # global managers, singletons
-      Controllers/       # per-feature behaviour
-      Systems/           # physics, networking, AI
-      UI/
-      Utilities/
-      Data/
-  Plugins/               # third-party
-  Editor/                # editor-only extensions
+  Scenes/            # one flat folder; feature subfolders only when it grows
+  Prefabs/
+  UI/                # art/sprites/materials for UI
+  Art/  Audio/  Textures/  Materials/  Shaders/  Fonts/  Animation/   # siblings of UI
+  Scripts/           # runtime code only — never editor-only code
+    <Feature>/       # 视觉/, 听觉/, Manager/, Data/, Net/, Tool/, ... by domain
+  Editor/
+    Scripts/         # editor-only code; mirrors the feature folders it serves
+  Resources/         # only assets loaded by string path at runtime
+  StreamingAssets/
+  Plugins/           # third-party, do not edit
+  Settings/          # URP asset, post-process profile
 ```
 
-Either way: `Runtime/` and `Editor/` stay apart (with `.asmdef` files), folder path mirrors the
-namespace when you use namespaces, and a feature that outgrows its folder graduates to its own
-top-level folder rather than gaining another level of nesting.
+Rules that follow from it:
+
+- **Editor-only assets go under `Assets/Editor/`** — editor scripts, inspectors, `EditorWindow`s,
+  gizmo drawers. Unity treats any folder named `Editor` as editor-only at any depth, so keeping
+  exactly one at the root is a choice for clarity, not a requirement; what matters is that runtime
+  code never references editor-only code and vice versa, enforced with `.asmdef` files. A runtime
+  folder called `Scripts/Runtime/` only earns its extra level when runtime and editor trees really
+  mirror one another; otherwise `Scripts/` **is** the runtime tree and the mirror of `Editor/Scripts/`.
+- Script folders group **by domain**, not by type: a new attention-game script belongs in the
+  attention feature folder, not in a `Controllers/` bucket. Type-based buckets (`Managers/`,
+  `Controllers/`, `Utils/`) rot into dumping grounds once the project has real systems.
+- A feature that outgrows its folder graduates to a top-level `Assets/<Feature>/` folder instead of
+  gaining another level of nesting. Keep the existing tree instead of rebuilding it when adding one
+  file, and do not introduce a second name for a folder that already exists — a project with both
+  `Scenes/` and `SceneFiles/`, or both `Art/` and `Textures/`, is drift worth flagging rather than
+  imitating.
+- Assets stay flat by type at the root rather than nested behind a wrapper such as `_Project/`.
+  The wrapper's only benefit is sorting first in the Project window; it costs a level in every path
+  and is not used here.
+
+Folder path mirrors the namespace when you use namespaces.
 
 ## Example: the right way to add a second type
 

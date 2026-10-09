@@ -72,31 +72,26 @@ Required usings: `UnityEngine.Rendering`, `UnityEngine.Rendering.Universal`.
 
 ## Folder Structure
 
-For a new project, create this layout. Script grouping follows the feature/domain convention; the
-alternative type-based grouping (and the `Assets/_Project/` wrapper) is described in the
-`csharp-file-organization` skill — pick one and stay consistent rather than mixing them.
+For a new project, create this layout: assets flat by type at the `Assets/` root, runtime scripts
+grouped by feature/domain under `Scripts/`, editor-only code under `Editor/Scripts/`. See the
+`csharp-file-organization` skill for the rules behind it.
 
 ```
 Assets/
-├── Scripts/
-│   ├── Runtime/
-│   │   ├── Core/           # GameManager, ServiceLocator
-│   │   ├── Gameplay/       # Game mechanics
-│   │   ├── UI/             # UI controllers
-│   │   └── Data/           # ScriptableObjects
-│   └── Editor/
-│       └── Tools/          # Custom editor tools
-├── Prefabs/
 ├── Scenes/
-├── Materials/
-├── Art/
-│   ├── Textures/
-│   ├── Sprites/
-│   └── Models/
-├── Audio/
+├── UI/                     # UI art / sprites / materials
+├── Art/  Audio/  Textures/  Materials/  Shaders/  Fonts/  Animation/
+├── Scripts/                # runtime code only
+│   └── <Feature>/          # by domain, e.g. Manager/, Data/, Net/, Tool/
+├── Editor/
+│   └── Scripts/            # editor-only code; mirrors the features it serves
+├── Prefabs/
 ├── Settings/               # URP Asset, Post Process Profile
-└── Resources/              # Only for dynamically loaded assets
+├── Resources/              # only assets loaded by string path at runtime
+└── StreamingAssets/
 ```
+
+Editor-only assets live under `Assets/Editor/` — never under `Scripts/`.
 
 ## Examples
 
