@@ -3,3 +3,6 @@ node_modules/
 pnpm-lock.yaml
 *.log
 .DS_Store
+
+# 重命名/删除前的本地备份，不进版本控制
+.backup-*/
