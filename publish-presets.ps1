@@ -43,7 +43,15 @@ param(
     # 主仓库根（含 .dsh-presets 的目录）。默认取脚本自身所在目录，便于把脚本放在仓库根直接运行。
     [string]$RepoRoot,
     # 推送用的 SSH 地址前缀。默认 git@github.com:<RepoOwner>；本机 HTTPS(443) 到 GitHub 不通。
-    [string]$GitRemoteBase
+    [string]$GitRemoteBase,
+    <#
+        跳过 gh 登录检查与 gh 建仓调用。
+        适用场景：目标仓库已经存在，只需推送。此时 gh 是否登录无关紧要——推送走的是
+        git + SSH key，与 gh 的 token 无关（实测：gh token 存在 keyring，DSH 重启后
+        可能取不到而报未登录，但 `ssh -T git@github.com` 与 `git push` 仍然正常）。
+        仓库是否存在改用 `git ls-remote` 判断（它同样只依赖 SSH）。
+    #>
+    [switch]$SkipGhCheck
 )
 
 $ErrorActionPreference = 'Stop'
@@ -84,14 +92,15 @@ if ($Only) {
 if (-not (Test-Path (Join-Path $repoRoot '.git'))) {
     throw "仓库根没有 .git：$repoRoot"
 }
-if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
-    throw "找不到 gh（GitHub CLI），请先安装"
-}
-# 干跑不接触远端，因此不强制登录，方便先验证拆分与 README 生成
-if (-not $DryRun) {
+# gh 只在需要「建仓」时才是必需的；推送本身走 git + SSH。
+# 干跑与 -SkipGhCheck 都不接触 gh，方便 gh 掉登录时仍能发布到已存在的仓库。
+if (-not $DryRun -and -not $SkipGhCheck) {
+    if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
+        throw "找不到 gh（GitHub CLI）。若目标仓库已存在，用 -SkipGhCheck 直接推送；否则请先安装 gh。"
+    }
     gh auth status *> $null
     if ($LASTEXITCODE -ne 0) {
-        throw "gh 未登录。请先运行：gh auth login"
+        throw "gh 未登录。请先运行：gh auth login；或若仓库已存在，用 -SkipGhCheck 走纯 SSH 推送。"
     }
 }
 
@@ -298,9 +307,22 @@ $($meta.Desc)
         Write-Host "  [干跑] 仓库不存在时还会执行: gh repo create $full --$Visibility" -ForegroundColor Yellow
         $url = "(干跑，未推送)"
     } else {
-        # 幂等：仓库若已存在（例如上次建仓成功但推送失败），跳过建仓直接推
-        gh api "repos/$full" --silent 2>$null
-        $repoExists = ($LASTEXITCODE -eq 0)
+        # 幂等：仓库若已存在（例如上次建仓成功但推送失败），跳过建仓直接推。
+        # 判定方式按模式选择：
+        #   -SkipGhCheck → git ls-remote（纯 SSH，不需要 gh token）
+        #   否则          → gh api（能区分私有仓库，但依赖 gh 登录）
+        if ($SkipGhCheck) {
+            $probe = git ls-remote --heads $remoteUrl 2>&1
+            $repoExists = ($LASTEXITCODE -eq 0 -and ($probe -join '') -match 'refs/heads')
+            if (-not $repoExists) {
+                Write-Warning "  仓库不存在或不可达：$remoteUrl（本模式不建仓，请先用 gh 登录建仓）"
+                $results += [pscustomobject]@{ 预设 = $p.Repo; 状态 = '仓库缺失(未建仓)'; 地址 = "https://github.com/$full"; 提交 = $head }
+                continue
+            }
+        } else {
+            gh api "repos/$full" --silent 2>$null
+            $repoExists = ($LASTEXITCODE -eq 0)
+        }
 
         if ($repoExists) {
             Write-Host "  仓库已存在，跳过建仓，直接推送" -ForegroundColor Yellow
