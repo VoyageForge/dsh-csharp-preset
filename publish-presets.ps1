@@ -133,7 +133,8 @@ function Get-SkillNames {
 
 <#
     生成一个预设仓库的 README.md 正文。
-    内容保持事实性：目录结构、如何挂载、CodeGraph 行为规则、技能清单、重新生成方式。
+    内容保持事实性：目录结构、安装方式、它做什么与不做什么、技能清单、重新生成方式。
+    README 会被当作对插件行为的声明，因此不得写入已从人格中移除的旧规则（例如 CodeGraph）。
 #>
 function New-PresetReadme {
     param(
@@ -167,16 +168,28 @@ $Description
 
 $skillLines
 
-## persona 里内置的 CodeGraph 行为规则
+## 安装
 
-``cordis.patch.yml`` 的 ``persona.prefix`` 中写有代码图谱（CodeGraph MCP）的使用规则，让 agent 不用被提示就自己去用：
+从 GitHub 直接安装（`{profile}` 换成目标 profile 名，通常是 ``web``）：
 
-- 结构性问题（某功能怎么实现、某符号在哪、改动会影响什么）优先调用 ``codegraph_explore``，而不是先跑一轮 grep/read；
-- 调用前自查当前工程有没有 ``.codegraph/`` 索引，**按需**提议建立（一个工程只提一次，不反复念）；
-- 建立索引、安装 CLI 都必须先取得用户同意才执行；
-- ``codegraph`` 命令报错时先判断 CLI 是否缺失，缺失则询问是否安装（含 Windows / macOS / Linux 三平台命令）。
+``````sh
+dsh plugin --profile web add github:VoyageForge/$RepoName
+``````
 
-未安装 CodeGraph 或未建索引时，以上规则不影响其它工具的正常使用。
+想锁定版本就钉住 commit（比标签可靠——标签可以移动，commit 不能）：
+
+``````sh
+dsh plugin --profile web add github:VoyageForge/$RepoName#<40 位或 7 位 sha>
+``````
+
+本包是纯配置 bundle（没有 TypeScript 源码、没有 ``prepare`` 脚本），因此 **git 安装不需要 ``allowBuilds`` 构建授权**。安装后用 ``dsh --profile web --dump-config`` 核对配置层已挂载，再启动。
+
+## 它做什么，不做什么
+
+- **做**：装配一个完整的人格——persona 文案、工具组合、按需加载的 Skill 目录。
+- **不做**：不注册自己的模型工具，不携带运行时逻辑。它组合的是 DSH 内置插件（``@deepseek-ai/dsh-persona``、``dsh-tool-*``、``dsh-skill-filesystem`` 等），这些插件本身已随 DSH 发行。
+
+因此它的价值在于「一次装好一整套开发约定」，而不是新增能力。
 
 ## 目录结构
 
@@ -187,31 +200,33 @@ $skillLines
 └── skills/
 ``````
 
-## 如何挂载
+## 本地开发时挂载（link 方式）
 
-本仓库根目录即预设包本身（根下有 ``package.json`` 与 ``cordis.patch.yml``）。在 DSH profile 的 ``package.json`` 里把它作为依赖加入，并登记进 ``dsh.profile.bundles``：
+如果你要改这个预设本身，把 clone 下来的目录以 ``link:`` 方式挂进 profile，改完立即生效（git 安装的副本则要重新 ``add`` 才会更新）：
 
 ``````json
 {
   "dependencies": {
-    "$RepoName": "link:path/to/$RepoName"
+    "@voyageforge/$RepoName": "link:path/to/$RepoName"
   },
   "dsh": {
     "profile": {
       "bundles": [
         "@deepseek-ai/dsh-base",
-        "$RepoName"
+        "@voyageforge/$RepoName"
       ]
     }
   }
 }
 ``````
 
-``link:`` 指向 clone 下来的仓库根目录即可；``bundles`` 里写根 ``package.json`` 中的 ``name``。
+``link:`` 指向仓库根目录；依赖键与 ``bundles`` 里都写根 ``package.json`` 中的 ``name``（带 ``@voyageforge/`` 作用域）。开发用 link、分发用 git，**两者不要同时存在**——同一 profile 里装两份同名 bundle 会因预设 id 重复而加载失败。
 
-## 重新生成 ``cordis.patch.yml``
+## 它是怎么生成的
 
-它是由原始预设（``~/.dsh/.agent-presets``）经脚本转换而来：把 ``preset.yml`` 的 name/description、``agent.cordis.yml`` 的 plugins 组装成 bundle 形态，并把 ``customSkillDirs`` 改成基于包名解析的写法。转换脚本见同目录的 ``migrate.ps1``。
+本仓库的 ``cordis.patch.yml`` 由一份生成脚本从原始预设转换而来：把 ``preset.yml`` 的 name/description、``agent.cordis.yml`` 的 plugins 组装成 bundle 形态，并把 ``customSkillDirs`` 改成基于包名解析的写法（``createRequire(baseUrl).resolve('<包名>/package.json')``）。
+
+生成脚本 ``migrate.ps1`` 与四个预设的源文件、发布脚本一起放在**主仓库** ``F:\Projects\Web\csharp``，不在本仓库内——本仓库只是它的发布产物。
 
 ## License
 
