@@ -72,7 +72,13 @@ Keep a consistent order inside every script (Unity Style Guide):
 
 ## Folder layout
 
-Group scripts by feature/domain, not a flat `Scripts/` dump:
+Two layouts are both defensible; pick by project size and stay consistent. Unity's manual fixes only
+the special folder names (`Editor`, `Resources`, `StreamingAssets`, `Plugins`) and their compile
+order — it prescribes nothing about how to group your own scripts
+([Special folders and script compilation order](https://docs.unity3d.com/6000.0/Documentation/Manual/ScriptCompileOrderFolders.html)).
+
+**By feature/domain — preferred once a project has real gameplay systems**, because one feature's
+code stays together and the tree keeps growing sideways instead of into ever-deeper type buckets:
 
 ```
 Assets/Scripts/
@@ -85,7 +91,29 @@ Assets/Scripts/
     Tools/       # custom editor tools, inspectors
 ```
 
-Folder path mirrors the namespace when you use namespaces.
+**By type — fine for small projects and prototypes**, and the more common convention in Chinese-language
+Unity projects, which usually also wrap first-party content in an `_Project/` folder so the leading
+underscore sorts it above imported Asset Store and plugin assets:
+
+```
+Assets/
+  _Project/              # first-party content; underscore keeps it on top
+    Scenes/
+    Scripts/
+      Core/              # lifecycle, events
+      Managers/          # global managers, singletons
+      Controllers/       # per-feature behaviour
+      Systems/           # physics, networking, AI
+      UI/
+      Utilities/
+      Data/
+  Plugins/               # third-party
+  Editor/                # editor-only extensions
+```
+
+Either way: `Runtime/` and `Editor/` stay apart (with `.asmdef` files), folder path mirrors the
+namespace when you use namespaces, and a feature that outgrows its folder graduates to its own
+top-level folder rather than gaining another level of nesting.
 
 ## Example: the right way to add a second type
 
@@ -104,7 +132,10 @@ public class PlayerMovement : MonoBehaviour
 
     private void FixedUpdate()
     {
-        // New Input System (see unity-coding-standards); no legacy Input.GetAxis.
+        // New Input System — correct only when the project has it active.
+        // For a legacy Input Manager project the equivalent is:
+        //   float horizontal = Input.GetAxis("Horizontal");
+        // Confirm the project's input solution first (see unity-coding-standards).
         float horizontal = Keyboard.current == null ? 0f
             : (Keyboard.current.dKey.isPressed ? 1f : 0f) - (Keyboard.current.aKey.isPressed ? 1f : 0f);
         _rb.linearVelocity = new Vector2(horizontal * _moveSpeed, _rb.linearVelocity.y);

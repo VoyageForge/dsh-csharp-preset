@@ -40,11 +40,19 @@ error CS0246: The type or namespace name 'InputAction' could not be found
 ```
 Fix: Add `using UnityEngine.InputSystem;`
 
-### Example 2: Old Input API
+### Example 2: Input API not found — check which input solution the project uses
 ```
 error CS0117: 'Input' does not contain a definition for 'GetKey'
 ```
-Fix: Replace `Input.GetKey(KeyCode.Space)` with `Keyboard.current.spaceKey.isPressed`
+This error usually means the project has `activeInputHandler: 1` (New Input System only), so the
+legacy `Input` class is compiled out. Do **not** conclude that legacy input is forbidden — it is a
+project-level setting, documented as not recommended and slated for removal
+([Legacy Input](https://docs.unity3d.com/6000.0/Documentation/Manual/InputLegacy.html)).
+
+Check `ProjectSettings/ProjectSettings.asset` → `activeInputHandler` first, then:
+- `1` (New only) → migrate the call, e.g. `Input.GetKey(KeyCode.Space)` → `Keyboard.current.spaceKey.isPressed`
+- `2` (both) → the call should compile; the error points elsewhere
+- `0` (legacy only) → the legacy call is fine; look for a different cause
 
 ### Example 3: Deprecated API
 ```

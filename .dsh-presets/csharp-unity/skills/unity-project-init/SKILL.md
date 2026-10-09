@@ -71,6 +71,11 @@ camData.renderPostProcessing = true;
 Required usings: `UnityEngine.Rendering`, `UnityEngine.Rendering.Universal`.
 
 ## Folder Structure
+
+For a new project, create this layout. Script grouping follows the feature/domain convention; the
+alternative type-based grouping (and the `Assets/_Project/` wrapper) is described in the
+`csharp-file-organization` skill — pick one and stay consistent rather than mixing them.
+
 ```
 Assets/
 ├── Scripts/

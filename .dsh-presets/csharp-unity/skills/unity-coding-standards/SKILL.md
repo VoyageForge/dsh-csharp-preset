@@ -43,10 +43,29 @@ public class ExampleComponent : MonoBehaviour
 }
 ```
 
-## Input (New Input System)
-```csharp
-using UnityEngine.InputSystem;
+## Input
 
+Determine which input solution the project actually uses **before writing input code** — never impose
+one on a project that already relies on the other:
+
+| Setting | Meaning |
+|---|---|
+| `Packages/manifest.json` lists `com.unity.inputsystem` | New Input System package is installed |
+| `ProjectSettings/ProjectSettings.asset` → `activeInputHandler` | `0` = legacy Input Manager only, `1` = New Input System only, `2` = both |
+
+- New Input System active → use it, as below.
+- Legacy Input Manager active (`activeInputHandler: 0`) → legacy `Input` is available and correct for
+  that project. Unity documents it as *not the recommended workflow* and says it will be removed in
+  future versions ([Legacy Input](https://docs.unity3d.com/6000.0/Documentation/Manual/InputLegacy.html)),
+  but it is not forbidden; an existing project that uses it stays on it.
+- Neither set up yet (a fresh project) → **ask the user once** whether to adopt the New Input System;
+  installing the package changes `activeInputHandler` and requires an Editor restart. Do not install
+  it unprompted.
+- Never mix legacy `Input` and New Input System calls for the same action in one project; mixed
+  `activeInputHandler: 2` is a migration state, so follow whichever the surrounding code uses.
+
+### New Input System (`using UnityEngine.InputSystem;`)
+```csharp
 // Mouse
 if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame) { }
 Vector2 mousePos = Mouse.current.position.ReadValue();
@@ -54,7 +73,16 @@ Vector2 mousePos = Mouse.current.position.ReadValue();
 // Keyboard
 if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame) { }
 ```
-**旧 API (`Input.GetKey`, `Input.mousePosition`) は使用禁止。** — The legacy API (`Input.GetKey`, `Input.mousePosition`) is forbidden; use the New Input System.
+
+### Legacy Input Manager (`using UnityEngine;`)
+```csharp
+// Mouse
+if (Input.GetMouseButtonDown(0)) { }
+Vector3 mousePos = Input.mousePosition;
+
+// Keyboard
+if (Input.GetKeyDown(KeyCode.Space)) { }
+```
 
 ## Anti-Patterns to Avoid
 - `GameObject.Find()` in Update — cache the reference
