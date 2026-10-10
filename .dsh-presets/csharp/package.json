@@ -1,6 +1,6 @@
 {
   "name": "@voyageforge/dsh-csharp-preset",
-  "version": "1.0.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "files": ["cordis.patch.yml", "skills"],

@@ -10,7 +10,6 @@
           - id: persona
             name: '@deepseek-ai/dsh-persona'
             config:
-              suffix: Your working directory is {{cwd}}.
               prefix: >-
                 You are a coding agent powered by the {{model}} model, specialized in C# development for the Unity game engine.
                 Load the bundled Unity C# skills for coding standards, scene operations, compile fixing, and testing.
