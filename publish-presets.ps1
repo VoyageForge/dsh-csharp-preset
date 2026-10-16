@@ -132,6 +132,31 @@ function Get-SkillNames {
 }
 
 <#
+    从 cordis.patch.yml 的 persona prefix 里提取「Hard rules (always follow)」下的编号规则。
+    规则行形如「  1. One type per file — …」，提取时去掉行首缩进，保留编号与正文。
+#>
+function Get-HardRules {
+    param([string]$PatchPath)
+    $lines = Get-Content -LiteralPath $PatchPath
+    $rules = @()
+    $inRules = $false
+    foreach ($line in $lines) {
+        if (-not $inRules) {
+            if ($line -match 'Hard rules') { $inRules = $true }
+            continue
+        }
+        if ($line -match '^\s+(\d+)\.\s+(.+)$') {
+            $rules += ($Matches[1] + '. ' + $Matches[2].Trim())
+        } elseif ($line.Trim() -eq '') {
+            continue
+        } else {
+            break
+        }
+    }
+    return $rules
+}
+
+<#
     生成一个预设仓库的 README.md 正文。
     内容保持事实性：目录结构、安装方式、它做什么与不做什么、技能清单、重新生成方式。
     README 会被当作对插件行为的声明，因此不得写入已从人格中移除的旧规则（例如 CodeGraph）。
@@ -141,12 +166,18 @@ function New-PresetReadme {
         [string]$DisplayName,
         [string]$Description,
         [string[]]$Skills,
+        [string[]]$Rules,
         [string]$RepoName
     )
     $skillLines = if ($Skills.Count) {
         ($Skills | ForEach-Object { "- ``$_``" }) -join "`n"
     } else {
         '- （无）'
+    }
+    $ruleLines = if ($Rules.Count) {
+        ($Rules | ForEach-Object { "- $_" }) -join "`n"
+    } else {
+        '- （未声明）'
     }
 
     @"
@@ -163,6 +194,10 @@ $Description
 | ``cordis.patch.yml`` | 预设定义：persona 文案 + 工具装配 + 技能目录 |
 | ``package.json`` | bundle 清单（``dsh.bundle.patch`` 指向上面的 patch） |
 | ``skills/`` | 该人格自带的 Skill，每个子目录一份 ``SKILL.md`` |
+
+## 人格规则（persona 硬约束，每次会话都会生效）
+
+$ruleLines
 
 ## 内置的 Skill
 
@@ -287,7 +322,8 @@ foreach ($p in $presets) {
     # 3. 生成 README
     $meta = Get-PresetMeta -PatchPath (Join-Path $srcDir 'cordis.patch.yml')
     $skills = Get-SkillNames -SkillsDir (Join-Path $srcDir 'skills')
-    $readme = New-PresetReadme -DisplayName $meta.Name -Description $meta.Desc -Skills $skills -RepoName $p.Repo
+    $rules = Get-HardRules -PatchPath (Join-Path $srcDir 'cordis.patch.yml')
+    $readme = New-PresetReadme -DisplayName $meta.Name -Description $meta.Desc -Skills $skills -Rules $rules -RepoName $p.Repo
     Set-Content -LiteralPath (Join-Path $tmp 'README.md') -Value $readme -Encoding utf8 -NoNewline
 
     # 4. 提交（git add -A 结算上提产生的重命名与其它预设的删除）
