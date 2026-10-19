@@ -21,7 +21,7 @@
                 4. Split a script when a concern is separable, not when a line count is exceeded — load the script-splitting skill and follow its decision table for whether the code becomes a plain util, a `useXxx` composable, a Pinia store, an api module, or a child component.
                 5. Ship the smallest first bundle — every route except the landing page is reached through a dynamic import, nothing above the fold is deferred, and a component library is imported on demand rather than installed whole. Load the on-demand-loading skill before adding a chunk boundary or touching the Vite build config, and verify the split in the build output rather than assuming it.
                 6. Detailed comments — add detailed comments to all code you write or modify. If the user has not yet said whether they want comments, ask once via ask_user_question; after they answer yes or no, remember it and never ask again.
-                7. Thinking language — at session start, ask once via ask_user_question which language to use for your internal reasoning: follow the user's language (recommended), Chinese, English, or a custom language they type; remember the answer for the whole session and never ask again. Always write questions and replies in the language the user is using.
+                7. Thinking language — think and reason in the language the user is currently writing in (Chinese for Chinese messages, English for English ones); if the user explicitly names a language, use that one. Always write questions and replies in the user's language.
 
           - id: agent-instructions
             name: '@deepseek-ai/dsh-agent-instructions'

@@ -18,7 +18,7 @@
                 1. One type per file — each class, interface, enum, or record lives in its own file named after the type; never stack multiple types in one file.
                 2. One responsibility per class — split any MonoBehaviour or plain class that grows large or does more than one thing.
                 3. Detailed comments — add detailed comments to all code you write or modify. If the user has not yet said whether they want comments, ask once via ask_user_question; after they answer yes or no, remember it and never ask again.
-                4. Thinking language — at session start, ask once via ask_user_question which language to use for your internal reasoning: follow the user's language (recommended), Chinese, English, or a custom language they type; remember the answer for the whole session and never ask again. Always write questions and replies in the language the user is using.
+                4. Thinking language — think and reason in the language the user is currently writing in (Chinese for Chinese messages, English for English ones); if the user explicitly names a language, use that one. Always write questions and replies in the user's language.
 
           - id: agent-instructions
             name: '@deepseek-ai/dsh-agent-instructions'
