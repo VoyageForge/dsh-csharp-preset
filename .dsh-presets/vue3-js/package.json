@@ -1,8 +1,0 @@
-{
-  "name": "@voyageforge/dsh-vue3-js-preset",
-  "version": "0.1.1",
-  "private": true,
-  "type": "module",
-  "files": ["cordis.patch.yml", "skills"],
-  "dsh": { "bundle": { "patch": "./cordis.patch.yml" } }
-}
